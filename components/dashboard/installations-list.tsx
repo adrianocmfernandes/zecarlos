@@ -1,12 +1,7 @@
-import { prisma } from "@/lib/prisma";
+import { fakeDb } from "@/lib/mockData";
 
 export async function InstallationsList() {
-  const installations = await prisma.installation.findMany({
-    where: { installDate: { gte: new Date() } },
-    include: { client: true },
-    orderBy: { installDate: "asc" },
-    take: 5
-  });
+  const installations = fakeDb.installations;
 
   return (
     <section className="rounded border bg-white p-4">
@@ -14,7 +9,7 @@ export async function InstallationsList() {
       <ul className="space-y-2 text-sm">
         {installations.map((inst) => (
           <li key={inst.id} className="rounded border p-2">
-            {inst.client.nome} — {new Date(inst.installDate).toLocaleDateString("pt-PT")}
+            {inst.clientName} — {new Date(inst.installDate).toLocaleDateString("pt-PT")}
           </li>
         ))}
         {installations.length === 0 ? <li>Sem instalações agendadas.</li> : null}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createId, fakeDb } from "@/lib/mockData";
 import { uploadImage } from "@/lib/upload";
 
 export async function POST(request: Request) {
@@ -10,34 +10,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ erro: "Dados de medição inválidos." }, { status: 400 });
     }
 
-    const photos = await Promise.all(
-      (data.fotos || []).map(async (fileName: string) => {
-        const result = await uploadImage(fileName);
-        return result;
-      })
-    );
+    const photos = await Promise.all((data.fotos || []).map((fileName: string) => uploadImage(fileName)));
 
-    const measurement = await prisma.measurement.create({
-      data: {
-        clientId: data.clientId,
-        visitDate: new Date(data.visitDate),
-        observacoes: data.observacoes || null,
-        rooms: {
-          create: data.rooms.map((room: Record<string, unknown>) => ({
-            divisao: String(room.divisao),
-            larguraCm: Number(room.larguraCm),
-            alturaCm: Number(room.alturaCm),
-            curtainTypeId: room.curtainTypeId ? String(room.curtainTypeId) : null,
-            notasTecnicas: room.notasTecnicas ? String(room.notasTecnicas) : null
-          }))
-        },
-        photos: {
-          create: photos
-        }
-      },
-      include: { rooms: true, photos: true }
-    });
+    const measurement = {
+      id: createId("measurement"),
+      clientId: String(data.clientId),
+      visitDate: new Date(data.visitDate).toISOString(),
+      observacoes: data.observacoes ? String(data.observacoes) : undefined,
+      rooms: data.rooms.map((room: Record<string, unknown>) => ({
+        divisao: String(room.divisao),
+        larguraCm: Number(room.larguraCm),
+        alturaCm: Number(room.alturaCm),
+        notasTecnicas: room.notasTecnicas ? String(room.notasTecnicas) : undefined
+      })),
+      fotos: photos.map((item) => item.fileUrl)
+    };
 
+    fakeDb.measurements.unshift(measurement);
     return NextResponse.json(measurement, { status: 201 });
   } catch {
     return NextResponse.json({ erro: "Erro ao criar medição." }, { status: 500 });

@@ -1,20 +1,7 @@
-import { prisma } from "@/lib/prisma";
+import { fakeDb } from "@/lib/mockData";
 
 export async function TaskList() {
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-
-  const tasks = await prisma.task.findMany({
-    where: {
-      dueDate: {
-        gte: new Date(today.toDateString()),
-        lt: new Date(tomorrow.toDateString())
-      }
-    },
-    include: { client: true },
-    orderBy: { dueDate: "asc" }
-  });
+  const tasks = fakeDb.tasks;
 
   return (
     <section className="rounded border bg-white p-4">
@@ -22,7 +9,7 @@ export async function TaskList() {
       <ul className="space-y-2 text-sm">
         {tasks.map((task) => (
           <li key={task.id} className="rounded border p-2">
-            {task.titulo} — {task.client.nome}
+            {task.titulo} — {task.clientName}
           </li>
         ))}
         {tasks.length === 0 ? <li>Sem tarefas para hoje.</li> : null}

@@ -1,17 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getPipelineData } from "@/lib/mockData";
 import { PipelineClient } from "./pipeline.client";
 
 export async function PipelineSection() {
-  const opportunities = await prisma.opportunity.findMany({
-    include: { client: true },
-    orderBy: { createdAt: "desc" },
-    take: 100
-  });
-
-  const cards = opportunities.map((opp) => ({
+  const cards = getPipelineData().map((opp) => ({
     id: opp.id,
-    clientName: opp.client.nome,
-    projectTitle: opp.tituloProjeto,
+    clientName: opp.clientName,
+    projectTitle: opp.projectTitle,
     stage: opp.stage
   }));
 

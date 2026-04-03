@@ -1,25 +1,22 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createId, fakeDb } from "@/lib/mockData";
 
 export async function GET() {
-  const items = await prisma.installation.findMany({ include: { client: true }, orderBy: { installDate: "asc" } });
-  return NextResponse.json(items);
+  return NextResponse.json(fakeDb.installations);
 }
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const installation = await prisma.installation.create({
-      data: {
-        clientId: data.clientId,
-        opportunityId: data.opportunityId || null,
-        installDate: new Date(data.installDate),
-        teamName: data.teamName,
-        status: data.status || "AGENDADA",
-        notes: data.notes || null
-      }
-    });
+    const installation = {
+      id: createId("inst"),
+      clientName: String(data.clientName || "Cliente Demo"),
+      installDate: String(data.installDate || new Date().toISOString()),
+      teamName: String(data.teamName || "Equipa A"),
+      status: "AGENDADA" as const
+    };
 
+    fakeDb.installations.unshift(installation);
     return NextResponse.json(installation, { status: 201 });
   } catch {
     return NextResponse.json({ erro: "Erro ao agendar instalação." }, { status: 500 });

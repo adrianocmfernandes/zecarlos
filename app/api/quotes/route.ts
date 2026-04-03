@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { calcularTotalLinhas, calcularTotais } from "@/lib/pricing";
+import { createId, fakeDb } from "@/lib/mockData";
 
 export async function POST(request: Request) {
   try {
@@ -21,35 +21,25 @@ export async function POST(request: Request) {
       };
     });
 
-    const subtotal = calcularTotalLinhas(
-      preparedLines.map((line: { descricao: string; quantity: number; unitPrice: number }) => ({
-        descricao: line.descricao,
-        quantidade: line.quantity,
-        precoUnitario: line.unitPrice
-      }))
-    );
+    const subtotal = calcularTotalLinhas(preparedLines.map((line: { descricao: string; quantity: number; unitPrice: number }) => ({
+      descricao: line.descricao,
+      quantidade: line.quantity,
+      precoUnitario: line.unitPrice
+    })));
 
     const { total, desconto } = calcularTotais(subtotal, Number(data.discount || 0));
 
-    const quote = await prisma.quote.create({
-      data: {
-        opportunityId: data.opportunityId,
-        quoteNumber: `ORC-${Date.now()}`,
-        discount: desconto,
-        subtotal,
-        total,
-        lines: {
-          create: preparedLines.map((line: { descricao: string; quantity: number; unitPrice: number; lineTotal: number }) => ({
-            descricao: line.descricao,
-            quantity: line.quantity,
-            unitPrice: line.unitPrice,
-            lineTotal: line.lineTotal
-          }))
-        }
-      },
-      include: { lines: true }
-    });
+    const quote = {
+      id: createId("quote"),
+      opportunityId: String(data.opportunityId),
+      quoteNumber: `ORC-${Date.now()}`,
+      subtotal,
+      discount: desconto,
+      total,
+      lines: preparedLines
+    };
 
+    fakeDb.quotes.unshift(quote);
     return NextResponse.json(quote, { status: 201 });
   } catch {
     return NextResponse.json({ erro: "Erro ao criar orçamento." }, { status: 500 });

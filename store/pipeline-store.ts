@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { PipelineStage } from "@prisma/client";
+import type { PipelineStage } from "@/lib/constants";
 
 type OpportunityCard = {
   id: string;

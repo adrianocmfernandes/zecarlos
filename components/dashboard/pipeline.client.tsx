@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { PipelineBoard } from "@/components/kanban/pipeline-board";
 import { usePipelineStore } from "@/store/pipeline-store";
-import type { PipelineStage } from "@prisma/client";
+import type { PipelineStage } from "@/lib/constants";
 
 type Card = {
   id: string;
