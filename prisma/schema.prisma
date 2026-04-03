@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PipelineStage {
+  LEAD_RECEBIDO
+  CONTACTADO
+  VISITA_MEDICAO_AGENDADA
+  MEDICAO_REALIZADA
+  ORCAMENTO_ENVIADO
+  NEGOCIACAO
+  GANHOU
+  PERDIDO
+  INSTALACAO_AGENDADA
+  CONCLUIDO
+}
+
+enum QuoteStatus {
+  RASCUNHO
+  ENVIADO
+  ACEITE
+  REJEITADO
+}
+
+enum TaskType {
+  FOLLOW_UP
+  CHAMADA
+  VISITA
+}
+
+enum TaskStatus {
+  PENDENTE
+  CONCLUIDA
+}
+
+enum InstallationStatus {
+  AGENDADA
+  EM_CURSO
+  CONCLUIDA
+  REAGENDADA
+}
+
+model Client {
+  id           String        @id @default(cuid())
+  nome         String
+  telefone     String
+  email        String?
+  morada       String?
+  origemLead   String?
+  notas        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  opportunities Opportunity[]
+  measurements  Measurement[]
+  tasks         Task[]
+  installations Installation[]
+}
+
+model Opportunity {
+  id             String        @id @default(cuid())
+  clientId       String
+  tituloProjeto  String
+  valorEstimado  Decimal?      @db.Decimal(10, 2)
+  stage          PipelineStage @default(LEAD_RECEBIDO)
+  motivoPerdido  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  quotes         Quote[]
+  installations  Installation[]
+
+  @@index([stage])
+  @@index([clientId])
+}
+
+model Measurement {
+  id            String              @id @default(cuid())
+  clientId      String
+  visitDate     DateTime
+  observacoes   String?
+  createdAt     DateTime            @default(now())
+
+  client        Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  rooms         MeasurementRoom[]
+  photos        MeasurementPhoto[]
+  quoteLines    QuoteLine[]
+
+  @@index([clientId])
+}
+
+model MeasurementRoom {
+  id            String   @id @default(cuid())
+  measurementId String
+  divisao       String
+  larguraCm     Int
+  alturaCm      Int
+  curtainTypeId String?
+  notasTecnicas String?
+
+  measurement   Measurement  @relation(fields: [measurementId], references: [id], onDelete: Cascade)
+  curtainType   ProductType? @relation(fields: [curtainTypeId], references: [id], onDelete: SetNull)
+
+  @@index([measurementId])
+}
+
+model MeasurementPhoto {
+  id             String   @id @default(cuid())
+  measurementId  String
+  fileName       String
+  fileUrl        String
+  contentType    String?
+  createdAt      DateTime @default(now())
+
+  measurement    Measurement @relation(fields: [measurementId], references: [id], onDelete: Cascade)
+
+  @@index([measurementId])
+}
+
+model ProductType {
+  id            String    @id @default(cuid())
+  nome          String
+  descricao     String?
+  basePriceM2   Decimal   @db.Decimal(10, 2)
+  active        Boolean   @default(true)
+
+  fabrics       Fabric[]
+  extras        ProductExtra[]
+  measurementRooms MeasurementRoom[]
+  quoteLines    QuoteLine[]
+}
+
+model Fabric {
+  id            String    @id @default(cuid())
+  productTypeId String
+  nome          String
+  pricePerMeter Decimal   @db.Decimal(10, 2)
+  active        Boolean   @default(true)
+
+  productType   ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+  quoteLines    QuoteLine[]
+
+  @@index([productTypeId])
+}
+
+model ProductExtra {
+  id            String    @id @default(cuid())
+  productTypeId String
+  nome          String
+  valorFixo     Decimal?  @db.Decimal(10, 2)
+  valorPercent  Decimal?  @db.Decimal(5, 2)
+
+  productType   ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+  quoteLines    QuoteLineExtra[]
+
+  @@index([productTypeId])
+}
+
+model Quote {
+  id             String      @id @default(cuid())
+  opportunityId  String
+  quoteNumber    String      @unique
+  status         QuoteStatus @default(RASCUNHO)
+  validUntil     DateTime?
+  subtotal       Decimal     @default(0) @db.Decimal(10, 2)
+  discount       Decimal     @default(0) @db.Decimal(10, 2)
+  total          Decimal     @default(0) @db.Decimal(10, 2)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  opportunity    Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  lines          QuoteLine[]
+
+  @@index([opportunityId])
+}
+
+model QuoteLine {
+  id              String   @id @default(cuid())
+  quoteId         String
+  measurementId   String?
+  productTypeId   String?
+  fabricId        String?
+  descricao       String
+  quantity        Decimal  @db.Decimal(10, 2)
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  lineTotal       Decimal  @db.Decimal(10, 2)
+
+  quote           Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  measurement     Measurement? @relation(fields: [measurementId], references: [id], onDelete: SetNull)
+  productType     ProductType? @relation(fields: [productTypeId], references: [id], onDelete: SetNull)
+  fabric          Fabric?      @relation(fields: [fabricId], references: [id], onDelete: SetNull)
+  extras          QuoteLineExtra[]
+
+  @@index([quoteId])
+}
+
+model QuoteLineExtra {
+  id             String   @id @default(cuid())
+  quoteLineId    String
+  productExtraId String
+  quantity       Decimal  @default(1) @db.Decimal(10, 2)
+  unitPrice      Decimal  @db.Decimal(10, 2)
+
+  quoteLine      QuoteLine    @relation(fields: [quoteLineId], references: [id], onDelete: Cascade)
+  productExtra   ProductExtra @relation(fields: [productExtraId], references: [id], onDelete: Restrict)
+
+  @@unique([quoteLineId, productExtraId])
+}
+
+model Task {
+  id            String     @id @default(cuid())
+  clientId      String
+  titulo        String
+  descricao     String?
+  taskType      TaskType
+  dueDate       DateTime
+  status        TaskStatus @default(PENDENTE)
+  createdAt     DateTime   @default(now())
+
+  client        Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([dueDate])
+}
+
+model Installation {
+  id             String             @id @default(cuid())
+  clientId       String
+  opportunityId  String?
+  installDate    DateTime
+  teamName       String
+  status         InstallationStatus @default(AGENDADA)
+  notes          String?
+
+  client         Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  opportunity    Opportunity?       @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+  @@index([opportunityId])
+  @@index([installDate])
+}
