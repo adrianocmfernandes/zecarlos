@@ -3,6 +3,10 @@ import { fakeDb } from "@/lib/mockData";
 
 export async function GET(_: Request, { params }: { params: { id: string } }) {
   const client = fakeDb.clients.find((item) => item.id === params.id);
+import { prisma } from "@/lib/prisma";
+
+export async function GET(_: Request, { params }: { params: { id: string } }) {
+  const client = await prisma.client.findUnique({ where: { id: params.id } });
   if (!client) return NextResponse.json({ erro: "Cliente não encontrado." }, { status: 404 });
   return NextResponse.json(client);
 }
