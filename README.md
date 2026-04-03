@@ -88,3 +88,10 @@ npm run dev
 ## Nota importante
 
 Como os dados estão em memória (mock), reiniciar o servidor limpa alterações feitas durante a sessão.
+
+## Estado da branch
+
+Os conflitos reportados nesta branch foram resolvidos e os ficheiros críticos do demo
+(`app/api/*`, `components/dashboard/*`, `components/kanban/*`, `lib/constants.ts`,
+`store/pipeline-store.ts`, `.env.example`, `package.json`) estão alinhados com o modo
+frontend-only sem base de dados real.
