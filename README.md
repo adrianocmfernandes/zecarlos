@@ -28,8 +28,6 @@ lib/
   mockData.ts
   pricing.ts
   upload.ts
-prisma/
-  schema.prisma
 store/
   pipeline-store.ts
 types/
