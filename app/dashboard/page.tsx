@@ -74,6 +74,6 @@ export default function DashboardPage() {
           </div>
         </article>
       </section>
-    </div>
-  );
+            </div>
+        );
 }
