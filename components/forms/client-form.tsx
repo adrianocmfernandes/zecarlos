@@ -21,7 +21,7 @@ export function ClientForm() {
 
   return (
     <form action={onSubmit} className="card space-y-4">
-      <h2 className="text-lg font-semibold text-primary">Novo cliente</h2>
+      <h2 className="text-lg font-semibold text-foreground">Novo cliente</h2>
       <input name="name" placeholder="Nome" required className="input" />
       <input name="phone" placeholder="Telefone" required className="input" />
       <input name="address" placeholder="Morada" required className="input" />

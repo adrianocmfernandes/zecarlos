@@ -10,9 +10,9 @@ const NAV_ITEMS = [
 
 export function Header() {
   return (
-    <header className="border-b border-[#E8D8C3] bg-[#FAF7F2] px-4 py-4">
+    <header className="bg-secondary px-4 py-4">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold tracking-tight text-primary">{appConfig.appName}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{appConfig.appName}</h1>
         <nav className="flex flex-wrap gap-2 text-sm">
           {NAV_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} className="nav-link">

@@ -28,7 +28,7 @@ export function MeasurementForm() {
 
   return (
     <form action={onSubmit} className="card space-y-4">
-      <h2 className="text-lg font-semibold text-primary">Nova medição</h2>
+      <h2 className="text-lg font-semibold text-foreground">Nova medição</h2>
       <select name="client_id" required className="input">
         <option value="">Selecionar cliente</option>
         {clients.map((client) => (

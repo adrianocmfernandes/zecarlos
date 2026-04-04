@@ -3,62 +3,45 @@
 @tailwind utilities;
 
 :root {
-  --bg-main: #f5f1eb;
-  --bg-secondary: #e8d8c3;
-  --text-primary: #4a3a2a;
-  --text-secondary: #7a6a58;
-  --accent: #b89b7a;
-  --accent-hover: #a98d6d;
-  --card-white: #ffffff;
-  --card-soft: #faf7f2;
+  --background: 34 29% 94%; /* #F5F1EB */
+  --foreground: 32 28% 23%; /* #4A3A2A */
+  --card: 38 44% 96%; /* #FAF7F2 */
+  --card-foreground: 32 28% 23%;
+  --primary: 34 30% 60%; /* #B89B7A */
+  --primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --secondary: 33 42% 84%; /* #E8D8C3 */
+  --muted: 38 44% 96%;
+  --muted-foreground: 33 16% 41%; /* #7A6A58 */
+  --accent: 34 30% 60%;
+  --primary-hover: 34 29% 54%;
+  --border: 33 30% 76%;
 }
 
 body {
-  min-height: 100vh;
-  background: var(--bg-main);
-  color: var(--text-primary);
+  @apply min-h-screen bg-background font-medium text-foreground;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  font-weight: 500;
   line-height: 1.45;
 }
 
 @layer components {
   .card {
-    @apply rounded-3xl p-6;
-    background: var(--card-soft);
+    @apply rounded-3xl bg-card p-6 text-card-foreground shadow-sm;
     box-shadow: 0 8px 20px rgba(74, 58, 42, 0.06);
   }
 
   .input {
-    @apply w-full rounded-2xl border-0 px-4 py-3 text-base text-[#4A3A2A] outline-none;
-    background: var(--card-white);
-    box-shadow: inset 0 0 0 1px rgba(184, 155, 122, 0.2);
+    @apply w-full rounded-2xl border border-border bg-card px-4 py-3 text-base text-foreground outline-none;
   }
 
   .btn-primary {
-    @apply rounded-2xl px-5 py-3 text-base font-semibold text-white transition;
-    background: var(--accent);
+    @apply rounded-2xl bg-primary px-5 py-3 text-base font-semibold text-primary-foreground transition;
   }
 
   .btn-primary:hover {
-    background: var(--accent-hover);
+    background-color: hsl(var(--primary-hover));
   }
 
   .nav-link {
-    @apply rounded-full px-4 py-2 font-medium;
-    color: var(--text-primary);
-    background: rgba(184, 155, 122, 0.16);
-  }
-
-  .text-primary {
-    color: var(--text-primary);
-  }
-
-  .text-secondary {
-    color: var(--text-secondary);
-  }
-
-  .bg-soft {
-    background: var(--card-white);
+    @apply rounded-full bg-secondary px-4 py-2 font-medium text-foreground;
   }
 }

@@ -68,7 +68,7 @@ export function QuoteForm() {
   return (
     <div className="space-y-4">
       <form action={onCreate} className="card space-y-4">
-        <h2 className="text-lg font-semibold text-primary">Criar orçamento</h2>
+        <h2 className="text-lg font-semibold text-foreground">Criar orçamento</h2>
         <select name="client_id" required className="input">
           <option value="">Selecionar cliente</option>
           {clients.map((client) => (
@@ -96,7 +96,7 @@ export function QuoteForm() {
       </form>
 
       <form action={onVersion} className="card space-y-4">
-        <h2 className="text-lg font-semibold text-primary">Nova versão de orçamento</h2>
+        <h2 className="text-lg font-semibold text-foreground">Nova versão de orçamento</h2>
         <select name="quote_id" required className="input">
           <option value="">Selecionar orçamento</option>
           {editableQuotes.map((quote) => (
