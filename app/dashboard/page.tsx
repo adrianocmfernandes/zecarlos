@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const acceptedQuotes = useMemo(() => quotes.filter((quote) => quote.status === "aceite").length, [quotes]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-4">
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <MetricCard label="Clientes" value={clients.length} />
         <MetricCard label="Medições" value={measurements.length} />
@@ -40,13 +40,13 @@ export default function DashboardPage() {
         <h2 className="text-lg font-semibold text-primary">Ações rápidas</h2>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Link href={appConfig.routes.newClient} className="btn-primary text-center">
-            Add Client
+            Adicionar cliente
           </Link>
           <Link href={appConfig.routes.newMeasurement} className="btn-primary text-center">
-            Add Measurement
+            Adicionar medição
           </Link>
           <Link href={appConfig.routes.newQuote} className="btn-primary text-center">
-            Create Quote
+            Criar orçamento
           </Link>
         </div>
       </section>
@@ -74,27 +74,6 @@ export default function DashboardPage() {
           </div>
         </article>
       </section>
-import { Suspense } from "react";
-import { PipelineSection } from "@/components/dashboard/pipeline-section";
-import { TaskList } from "@/components/dashboard/task-list";
-import { InstallationsList } from "@/components/dashboard/installations-list";
-import { Metrics } from "@/components/dashboard/metrics";
-
-export default function DashboardPage() {
-  return (
-    <div className="space-y-4">
-      <Metrics />
-      <Suspense fallback={<p>A carregar pipeline...</p>}>
-        <PipelineSection />
-      </Suspense>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Suspense fallback={<p>A carregar tarefas...</p>}>
-          <TaskList />
-        </Suspense>
-        <Suspense fallback={<p>A carregar instalações...</p>}>
-          <InstallationsList />
-        </Suspense>
-      </div>
-    </div>
-  );
+            </div>
+        );
 }
