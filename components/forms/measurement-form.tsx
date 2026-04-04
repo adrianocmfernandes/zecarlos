@@ -9,13 +9,13 @@ export function MeasurementForm() {
   const [clients, setClients] = useState<Client[]>([]);
 
   useEffect(() => {
-    setClients(getClients());
+    void getClients().then(setClients);
   }, []);
 
-  function onSubmit(formData: FormData) {
+  async function onSubmit(formData: FormData) {
     setSaving(true);
 
-    addMeasurement({
+    await addMeasurement({
       client_id: String(formData.get("client_id") || ""),
       room: String(formData.get("room") || ""),
       dimensions: String(formData.get("dimensions") || ""),
@@ -23,7 +23,7 @@ export function MeasurementForm() {
     });
 
     setSaving(false);
-    alert("Medição guardada no dispositivo.");
+    alert("Medição guardada com sucesso.");
   }
 
   return (

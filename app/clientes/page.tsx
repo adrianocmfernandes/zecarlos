@@ -10,7 +10,7 @@ export default function ClientesPage() {
   const [clients, setClients] = useState<Client[]>([]);
 
   useEffect(() => {
-    setClients(getClients());
+    void getClients().then(setClients);
   }, []);
 
   return (

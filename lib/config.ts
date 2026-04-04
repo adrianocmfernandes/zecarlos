@@ -1,31 +1,23 @@
 const env = {
   appName: process.env.NEXT_PUBLIC_APP_NAME?.trim(),
-  storageNamespace: process.env.NEXT_PUBLIC_STORAGE_NAMESPACE?.trim()
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.trim(),
+  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
 };
 
 export const appConfig = {
   appName: env.appName || "Querido Lar CRM",
-  appDescription: "CRM local-first para vendas de cortinas e interiores",
+  appDescription: "CRM hosted para vendas de cortinas e interiores",
   locale: "pt-PT",
   routes: {
+    login: "/login",
     dashboard: "/dashboard",
     clients: "/clientes",
     newClient: "/clientes/novo",
     newMeasurement: "/medicoes/nova",
     newQuote: "/orcamentos/novo"
   },
-  storage: {
-    namespace: env.storageNamespace || "querido-lar",
-    keys: {
-      clients: "clients",
-      measurements: "measurements",
-      quotes: "quotes",
-      pipeline: "pipeline",
-      tasks: "tasks"
-    }
+  supabase: {
+    url: env.supabaseUrl || "",
+    anonKey: env.supabaseAnonKey || ""
   }
 } as const;
-
-export function getStorageKey(key: keyof typeof appConfig.storage.keys) {
-  return `${appConfig.storage.namespace}:${appConfig.storage.keys[key]}`;
-}

@@ -6,10 +6,10 @@ import { addClient, addOpportunity } from "@/lib/storage";
 export function ClientForm() {
   const [saving, setSaving] = useState(false);
 
-  function onSubmit(formData: FormData) {
+  async function onSubmit(formData: FormData) {
     setSaving(true);
 
-    const client = addClient({
+    const client = await addClient({
       name: String(formData.get("name") || ""),
       phone: String(formData.get("phone") || ""),
       address: String(formData.get("address") || "")
@@ -20,7 +20,7 @@ export function ClientForm() {
     if (shouldCreateOpportunity) {
       const description = window.prompt("Descreva brevemente o que o cliente pretende", "Blackout quartos") || "Pedido inicial";
       const estimate = window.prompt("Valor estimado (€) - opcional", "");
-      addOpportunity({
+      await addOpportunity({
         client_id: client.id,
         description,
         estimated_value: estimate ? Number(estimate) : undefined
@@ -28,7 +28,7 @@ export function ClientForm() {
     }
 
     setSaving(false);
-    alert("Cliente guardado no dispositivo.");
+    alert("Cliente guardado com sucesso.");
   }
 
   return (

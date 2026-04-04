@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   getClientById,
@@ -12,22 +12,38 @@ import {
   normalizePhoneToWhatsApp,
   toggleTaskDone
 } from "@/lib/storage";
-import { PIPELINE_STAGE_LABELS } from "@/types";
+import { PIPELINE_STAGE_LABELS, type Measurement, type Opportunity, type Quote, type Task } from "@/types";
 
 export default function ClienteDetalhePage() {
   const params = useParams<{ id: string }>();
-  const [reloadTick, setReloadTick] = useState(0);
+  const [client, setClient] = useState<Awaited<ReturnType<typeof getClientById>>>(null);
+  const [measurements, setMeasurements] = useState<Measurement[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [expandedQuoteId, setExpandedQuoteId] = useState<string | null>(null);
 
-  const client = useMemo(() => getClientById(params.id), [params.id, reloadTick]);
-  const measurements = useMemo(() => getMeasurements().filter((item) => item.client_id === params.id), [params.id, reloadTick]);
-  const quotes = useMemo(() => getQuotes().filter((item) => item.client_id === params.id), [params.id, reloadTick]);
-  const opportunity = useMemo(() => getOpportunities().find((item) => item.client_id === params.id) ?? null, [params.id, reloadTick]);
-  const tasks = useMemo(() => {
-    const taskPool = getTasks();
-    if (!opportunity) return [];
-    return taskPool.filter((task) => task.opportunity_id === opportunity.id);
-  }, [opportunity, reloadTick]);
+  async function loadAll() {
+    const clientData = await getClientById(params.id);
+    setClient(clientData);
+
+    const [measurementsData, quotesData, opportunitiesData, taskData] = await Promise.all([
+      getMeasurements(params.id),
+      getQuotes(params.id),
+      getOpportunities(),
+      getTasks()
+    ]);
+
+    const clientOpportunity = opportunitiesData.find((item) => item.client_id === params.id) ?? null;
+    setOpportunity(clientOpportunity);
+    setMeasurements(measurementsData);
+    setQuotes(quotesData);
+    setTasks(clientOpportunity ? taskData.filter((task) => task.opportunity_id === clientOpportunity.id) : []);
+  }
+
+  useEffect(() => {
+    void loadAll();
+  }, [params.id]);
 
   if (!client) {
     return <p className="text-muted-foreground">Cliente não encontrado.</p>;
@@ -108,9 +124,9 @@ export default function ClienteDetalhePage() {
                 <button
                   type="button"
                   className="nav-link"
-                  onClick={() => {
-                    toggleTaskDone(task.id, true);
-                    setReloadTick((value) => value + 1);
+                  onClick={async () => {
+                    await toggleTaskDone(task.id, true);
+                    await loadAll();
                   }}
                 >
                   Concluir

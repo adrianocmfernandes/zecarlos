@@ -9,14 +9,19 @@ export function QuoteForm() {
   const [clients, setClients] = useState<Client[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
 
+  async function loadData() {
+    const [clientsData, quotesData] = await Promise.all([getClients(), getQuotes()]);
+    setClients(clientsData);
+    setQuotes(quotesData);
+  }
+
   useEffect(() => {
-    setClients(getClients());
-    setQuotes(getQuotes());
+    void loadData();
   }, []);
 
   const editableQuotes = useMemo(() => quotes.filter((quote) => quote.versions.length > 0), [quotes]);
 
-  function onCreate(formData: FormData) {
+  async function onCreate(formData: FormData) {
     setSaving(true);
     const snapshot = {
       title: String(formData.get("title") || "Orçamento"),
@@ -30,22 +35,22 @@ export function QuoteForm() {
       notes: String(formData.get("notes") || "")
     };
 
-    addQuote({
+    await addQuote({
       client_id: String(formData.get("client_id") || ""),
       status: String(formData.get("status") || "rascunho") as Quote["status"],
       snapshot
     });
 
-    setQuotes(getQuotes());
+    await loadData();
     setSaving(false);
     alert("Orçamento criado com versão 1.");
   }
 
-  function onVersion(formData: FormData) {
+  async function onVersion(formData: FormData) {
     setSaving(true);
 
     const quoteId = String(formData.get("quote_id") || "");
-    updateQuote(quoteId, {
+    await updateQuote(quoteId, {
       status: String(formData.get("new_status") || "rascunho") as Quote["status"],
       snapshot: {
         title: String(formData.get("new_title") || "Atualização"),
@@ -60,7 +65,7 @@ export function QuoteForm() {
       }
     });
 
-    setQuotes(getQuotes());
+    await loadData();
     setSaving(false);
     alert("Nova versão criada sem perder o histórico.");
   }

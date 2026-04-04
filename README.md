@@ -1,66 +1,36 @@
 # Querido Lar CRM
 
-CRM **local-first** para uma empresa de cortinas/interiores.
+CRM para empresa de cortinas/interiores com **Next.js + Supabase**.
 
-## Princípios deste demo
+## Stack
 
-- Sem backend
-- Sem base de dados
-- Sem Prisma
-- Sem `DATABASE_URL`
-- Persistência no browser com `localStorage`
-- Configuração centralizada em `lib/config.ts`
+- Next.js (App Router)
+- Supabase (Postgres + Auth)
+- TailwindCSS
 
-## Configuração (single source of truth)
+## Requisitos
 
-Toda a configuração de runtime vem de **um único módulo**: `lib/config.ts`.
+Criar `.env.local` com:
 
-- Apenas `lib/config.ts` pode ler variáveis de ambiente.
-- O resto da aplicação deve importar `appConfig` e `getStorageKey`.
-- Use `.env.local` para overrides locais (ficheiro ignorado por git).
+```bash
+NEXT_PUBLIC_APP_NAME="Querido Lar CRM"
+NEXT_PUBLIC_SUPABASE_URL="https://your-project-id.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+```
 
-### Variáveis suportadas
+## Base de dados
 
-Veja `.env.example` para a estrutura mínima não sensível:
+As migrations SQL estão em `supabase/migrations/`.
 
-- `NEXT_PUBLIC_APP_NAME`
-- `NEXT_PUBLIC_STORAGE_NAMESPACE`
+## Autenticação
 
-## Funcionalidades
+- Login em `/login` com email + palavra-passe
+- Middleware protege as rotas privadas
+- Sessão gerida com `@supabase/ssr`
 
-- Gestão de clientes
-- Registo de medições
-- Criação de orçamentos
-- Versionamento de orçamentos (nunca apaga versões anteriores)
-- Dashboard mobile-first com ações rápidas
-
-## Arrancar localmente
+## Executar
 
 ```bash
 npm install
 npm run dev
 ```
-
-Abrir: `http://localhost:3000`
-
-## Estrutura de dados
-
-### Cliente
-- `id`, `name`, `phone`, `address`
-
-### Medição
-- `id`, `client_id`, `room`, `dimensions`, `notes`, `created_at`
-
-### Orçamento
-- `id`, `client_id`, `status`, `versions[]`
-
-### Versão de orçamento
-- `version`, `data`, `created_at`
-
-## Persistência
-
-Toda a persistência está em `lib/storage.ts`.
-
-- `getClients / addClient / updateClient`
-- `getMeasurements / addMeasurement`
-- `getQuotes / addQuote / updateQuote`

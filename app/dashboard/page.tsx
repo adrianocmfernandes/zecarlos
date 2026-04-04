@@ -30,15 +30,22 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
 
-  function reloadData() {
-    setClients(getClients());
-    setQuotes(getQuotes());
-    setOpportunities(getOpportunities());
-    setTasks(getTasks());
+  async function reloadData() {
+    const [clientsData, quotesData, opportunitiesData, tasksData] = await Promise.all([
+      getClients(),
+      getQuotes(),
+      getOpportunities(),
+      getTasks()
+    ]);
+
+    setClients(clientsData);
+    setQuotes(quotesData);
+    setOpportunities(opportunitiesData);
+    setTasks(tasksData);
   }
 
   useEffect(() => {
-    reloadData();
+    void reloadData();
   }, []);
 
   const conversionRate = useMemo(() => {
@@ -58,7 +65,7 @@ export default function DashboardPage() {
         const created = new Date(item.created_at);
         return created.getMonth() === month && created.getFullYear() === year;
       })
-      .reduce((total, item) => total + (item.estimated_value ?? 0), 0);
+      .reduce((total, item) => total + Number(item.estimated_value ?? 0), 0);
   }, [opportunities]);
 
   const averageAcceptedQuote = useMemo(() => {
@@ -127,11 +134,11 @@ export default function DashboardPage() {
               key={stage}
               className="rounded-2xl bg-card p-3"
               onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => {
+              onDrop={async (event) => {
                 event.preventDefault();
                 const opportunityId = event.dataTransfer.getData("opportunity_id");
-                updateOpportunity(opportunityId, { stage });
-                reloadData();
+                await updateOpportunity(opportunityId, { stage });
+                await reloadData();
               }}
             >
               <h3 className="mb-2 text-xs font-semibold text-foreground">{PIPELINE_STAGE_LABELS[stage]}</h3>
@@ -168,14 +175,14 @@ export default function DashboardPage() {
           {showTaskForm ? (
             <form
               className="mb-3 space-y-2"
-              action={(formData) => {
-                addTask({
+              action={async (formData) => {
+                await addTask({
                   label: String(formData.get("label") || ""),
                   due_date: String(formData.get("due_date") || ""),
                   opportunity_id: String(formData.get("opportunity_id") || "") || undefined
                 });
                 setShowTaskForm(false);
-                reloadData();
+                await reloadData();
               }}
             >
               <input name="label" required placeholder="Descrição da tarefa" className="input" />
@@ -204,9 +211,9 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   className="nav-link"
-                  onClick={() => {
-                    toggleTaskDone(task.id, true);
-                    reloadData();
+                  onClick={async () => {
+                    await toggleTaskDone(task.id, true);
+                    await reloadData();
                   }}
                 >
                   Concluir
