@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addClient } from "@/lib/storage";
+import { addClient, addOpportunity } from "@/lib/storage";
 
 export function ClientForm() {
   const [saving, setSaving] = useState(false);
@@ -9,11 +9,23 @@ export function ClientForm() {
   function onSubmit(formData: FormData) {
     setSaving(true);
 
-    addClient({
+    const client = addClient({
       name: String(formData.get("name") || ""),
       phone: String(formData.get("phone") || ""),
       address: String(formData.get("address") || "")
     });
+
+    const shouldCreateOpportunity = window.confirm("Pretende criar já uma oportunidade comercial para este cliente?");
+
+    if (shouldCreateOpportunity) {
+      const description = window.prompt("Descreva brevemente o que o cliente pretende", "Blackout quartos") || "Pedido inicial";
+      const estimate = window.prompt("Valor estimado (€) - opcional", "");
+      addOpportunity({
+        client_id: client.id,
+        description,
+        estimated_value: estimate ? Number(estimate) : undefined
+      });
+    }
 
     setSaving(false);
     alert("Cliente guardado no dispositivo.");

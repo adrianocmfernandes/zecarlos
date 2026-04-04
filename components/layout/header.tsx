@@ -3,7 +3,7 @@ import { appConfig } from "@/lib/config";
 
 const NAV_ITEMS = [
   { href: appConfig.routes.dashboard, label: "Dashboard" },
-  { href: appConfig.routes.newClient, label: "Novo cliente" },
+  { href: appConfig.routes.clients, label: "Clientes" },
   { href: appConfig.routes.newMeasurement, label: "Nova medição" },
   { href: appConfig.routes.newQuote, label: "Novo orçamento" }
 ] as const;

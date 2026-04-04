@@ -9,6 +9,7 @@ export const appConfig = {
   locale: "pt-PT",
   routes: {
     dashboard: "/dashboard",
+    clients: "/clientes",
     newClient: "/clientes/novo",
     newMeasurement: "/medicoes/nova",
     newQuote: "/orcamentos/novo"
@@ -18,7 +19,9 @@ export const appConfig = {
     keys: {
       clients: "clients",
       measurements: "measurements",
-      quotes: "quotes"
+      quotes: "quotes",
+      pipeline: "pipeline",
+      tasks: "tasks"
     }
   }
 } as const;
