@@ -106,7 +106,6 @@ export function updateQuote(quoteId: string, input: { snapshot: QuoteSnapshot; s
   let result: Quote | null = null;
   const updated = getQuotes().map((quote) => {
     if (quote.id !== quoteId) return quote;
-
     result = {
       ...quote,
       status: input.status ?? quote.status,
@@ -119,10 +118,8 @@ export function updateQuote(quoteId: string, input: { snapshot: QuoteSnapshot; s
         }
       ]
     };
-
     return result;
   });
-
   writeJson(STORAGE_KEYS.quotes, updated);
   return result;
 }
@@ -149,7 +146,6 @@ export function addOpportunity(input: {
     estimated_value: input.estimated_value,
     installation_date: input.installation_date
   };
-
   writeJson(STORAGE_KEYS.pipeline, [next, ...getOpportunities()]);
   return next;
 }
@@ -158,16 +154,13 @@ export function updateOpportunity(opportunityId: string, patch: Partial<Omit<Opp
   let result: Opportunity | null = null;
   const updated = getOpportunities().map((opportunity) => {
     if (opportunity.id !== opportunityId) return opportunity;
-
     result = {
       ...opportunity,
       ...patch,
       updated_at: new Date().toISOString()
     };
-
     return result;
   });
-
   writeJson(STORAGE_KEYS.pipeline, updated);
   return result;
 }
