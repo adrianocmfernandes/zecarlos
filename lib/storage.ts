@@ -86,7 +86,6 @@ export async function addMeasurement(input: Omit<Measurement, "id" | "created_at
     .insert({ ...input, created_by: createdBy })
     .select("*")
     .single();
-
   if (error) throw error;
   return data as Measurement;
 }
@@ -139,7 +138,6 @@ export async function addQuote(input: { client_id: string; status?: QuoteStatus;
     ...quoteData,
     versions: [
       {
-        id: "local",
         version: 1,
         data: input.snapshot,
         created_at: new Date().toISOString()

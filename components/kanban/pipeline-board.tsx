@@ -1,48 +1,40 @@
 "use client";
 
-import { PIPELINE_STAGES, STAGE_LABELS, type PipelineStage } from "@/lib/constants";
-import { usePipelineStore } from "@/store/pipeline-store";
+import { PIPELINE_STAGE_LABELS, PIPELINE_STAGES, type Opportunity, type PipelineStage } from "@/types";
 
 type Props = {
-  onStageChange?: (opportunityId: string, stage: PipelineStage) => Promise<void>;
+  opportunities: Opportunity[];
+  onDrop: (opportunityId: string, stage: PipelineStage) => void;
+  getClientName: (clientId: string) => string;
 };
 
-export function PipelineBoard({ onStageChange }: Props) {
-  const { cards, moveCard } = usePipelineStore();
-
-  async function handleDrop(stage: PipelineStage, cardId: string) {
-    moveCard(cardId, stage);
-    if (onStageChange) await onStageChange(cardId, stage);
-  }
-
+export function PipelineBoard({ opportunities, onDrop, getClientName }: Props) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
       {PIPELINE_STAGES.map((stage) => (
         <section
           key={stage}
-          className="rounded border bg-white p-2"
+          className="rounded-2xl bg-card p-3"
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             event.preventDefault();
-            const cardId = event.dataTransfer.getData("cardId");
-            if (cardId) {
-              void handleDrop(stage, cardId);
-            }
+            const opportunityId = event.dataTransfer.getData("opportunity_id");
+            if (opportunityId) onDrop(opportunityId, stage);
           }}
         >
-          <h3 className="mb-2 text-sm font-semibold">{STAGE_LABELS[stage]}</h3>
+          <h3 className="mb-2 text-xs font-semibold text-foreground">{PIPELINE_STAGE_LABELS[stage]}</h3>
           <div className="min-h-20 space-y-2">
-            {cards
-              .filter((card) => card.stage === stage)
-              .map((card) => (
+            {opportunities
+              .filter((item) => item.stage === stage)
+              .map((item) => (
                 <article
-                  key={card.id}
+                  key={item.id}
                   draggable
-                  onDragStart={(event) => event.dataTransfer.setData("cardId", card.id)}
-                  className="cursor-move rounded border p-2 text-sm"
+                  onDragStart={(event) => event.dataTransfer.setData("opportunity_id", item.id)}
+                  className="rounded-xl border border-border bg-background p-2 text-xs cursor-move"
                 >
-                  <p className="font-medium">{card.clientName}</p>
-                  <p className="text-xs text-slate-600">{card.projectTitle}</p>
+                  <p className="font-semibold text-foreground">{getClientName(item.client_id)}</p>
+                  <p className="text-muted-foreground">{item.description}</p>
                 </article>
               ))}
           </div>
