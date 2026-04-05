@@ -90,6 +90,29 @@ export async function addMeasurement(input: Omit<Measurement, "id" | "created_at
   return data as Measurement;
 }
 
+export async function updateMeasurement(measurementId: string, patch: Partial<Omit<Measurement, "id" | "created_at">>) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("measurements")
+    .update(patch)
+    .eq("id", measurementId)
+    .select("*")
+    .maybeSingle();
+  if (error) return null;
+  return data as Measurement | null;
+}
+
+export async function deleteMeasurement(measurementId: string) {
+  const supabase = createClient();
+  await supabase.from("measurements").delete().eq("id", measurementId);
+}
+
+export async function deleteQuote(quoteId: string) {
+  const supabase = createClient();
+  await supabase.from("quote_versions").delete().eq("quote_id", quoteId);
+  await supabase.from("quotes").delete().eq("id", quoteId);
+}
+
 export async function getQuotes(clientId?: string) {
   const supabase = createClient();
   let query = supabase

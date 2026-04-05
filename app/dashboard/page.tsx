@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { appConfig } from "@/lib/config";
 import {
   addTask,
@@ -12,7 +12,7 @@ import {
   toggleTaskDone,
   updateOpportunity
 } from "@/lib/storage";
-import { PIPELINE_STAGE_LABELS, PIPELINE_STAGES, type Client, type Opportunity, type Quote, type Task } from "@/types";
+import { PIPELINE_STAGE_LABELS, PIPELINE_STAGES, type Client, type Opportunity, type PipelineStage, type Quote, type Task } from "@/types";
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
@@ -23,12 +23,98 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Modal that asks the user to pick an installation date before confirming a stage move. */
+function InstallDateModal({
+  onConfirm,
+  onCancel
+}: {
+  onConfirm: (date: string) => void;
+  onCancel: () => void;
+}) {
+  const [date, setDate] = useState("");
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 px-4">
+      <div className="card w-full max-w-sm space-y-4">
+        <h3 className="text-lg font-semibold text-foreground">Data de instalação</h3>
+        <p className="text-sm text-muted-foreground">Selecione a data prevista para esta instalação.</p>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="input"
+        />
+        <div className="flex gap-3">
+          <button
+            type="button"
+            className="btn-primary flex-1"
+            disabled={!date}
+            onClick={() => onConfirm(date)}
+          >
+            Confirmar
+          </button>
+          <button type="button" className="nav-link flex-1 text-center" onClick={onCancel}>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Inline dropdown to move an opportunity to a different stage on touch devices. */
+function MoveMenu({
+  opportunity,
+  onMove,
+  onClose
+}: {
+  opportunity: Opportunity;
+  onMove: (stage: PipelineStage) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleOutside(e: MouseEvent | TouchEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+    };
+  }, [onClose]);
+
+  return (
+    <div ref={ref} className="absolute left-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+      {PIPELINE_STAGES.filter((s) => s !== opportunity.stage).map((s) => (
+        <button
+          key={s}
+          type="button"
+          className="block w-full px-3 py-2 text-left text-xs text-foreground hover:bg-secondary"
+          onClick={() => onMove(s)}
+        >
+          {PIPELINE_STAGE_LABELS[s]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
+
+  // Mobile move menu: stores the opportunity id whose menu is open
+  const [mobileMenuId, setMobileMenuId] = useState<string | null>(null);
+
+  // Pending stage move waiting for install date confirmation
+  const [pendingMove, setPendingMove] = useState<{ opportunityId: string; stage: PipelineStage } | null>(null);
 
   async function reloadData() {
     const [clientsData, quotesData, opportunitiesData, tasksData] = await Promise.all([
@@ -47,6 +133,27 @@ export default function DashboardPage() {
   useEffect(() => {
     void reloadData();
   }, []);
+
+  /** Central handler for all stage moves. Intercepts INSTALACAO_AGENDADA to ask for date. */
+  async function requestMove(opportunityId: string, stage: PipelineStage) {
+    setMobileMenuId(null);
+    if (stage === "INSTALACAO_AGENDADA") {
+      setPendingMove({ opportunityId, stage });
+      return;
+    }
+    await updateOpportunity(opportunityId, { stage });
+    await reloadData();
+  }
+
+  async function confirmInstallDate(date: string) {
+    if (!pendingMove) return;
+    await updateOpportunity(pendingMove.opportunityId, {
+      stage: "INSTALACAO_AGENDADA",
+      installation_date: date
+    });
+    setPendingMove(null);
+    await reloadData();
+  }
 
   const conversionRate = useMemo(() => {
     const considered = opportunities.filter((item) => item.stage !== "LEAD_RECEBIDO");
@@ -90,11 +197,16 @@ export default function DashboardPage() {
       .sort((a, b) => a.due_date.localeCompare(b.due_date));
   }, [tasks]);
 
+  // Sort by installation_date ascending (nearest first). Falls back to updated_at.
   const upcomingInstallations = useMemo(
     () =>
       opportunities
         .filter((item) => item.stage === "INSTALACAO_AGENDADA")
-        .sort((a, b) => a.updated_at.localeCompare(b.updated_at))
+        .sort((a, b) => {
+          const dateA = a.installation_date ?? a.updated_at;
+          const dateB = b.installation_date ?? b.updated_at;
+          return dateA.localeCompare(dateB);
+        })
         .slice(0, 5),
     [opportunities]
   );
@@ -105,6 +217,14 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-4">
+      {/* Installation date modal */}
+      {pendingMove ? (
+        <InstallDateModal
+          onConfirm={confirmInstallDate}
+          onCancel={() => setPendingMove(null)}
+        />
+      ) : null}
+
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <MetricCard label="Taxa de conversão" value={`${conversionRate.toFixed(1)}%`} />
         <MetricCard label="Receita mensal" value={`${monthlyRevenue.toFixed(2)} €`} />
@@ -137,8 +257,7 @@ export default function DashboardPage() {
               onDrop={async (event) => {
                 event.preventDefault();
                 const opportunityId = event.dataTransfer.getData("opportunity_id");
-                await updateOpportunity(opportunityId, { stage });
-                await reloadData();
+                if (opportunityId) await requestMove(opportunityId, stage);
               }}
             >
               <h3 className="mb-2 text-xs font-semibold text-foreground">{PIPELINE_STAGE_LABELS[stage]}</h3>
@@ -150,11 +269,31 @@ export default function DashboardPage() {
                       key={item.id}
                       draggable
                       onDragStart={(event) => event.dataTransfer.setData("opportunity_id", item.id)}
-                      className="rounded-xl border border-border bg-background p-2"
+                      className="relative rounded-xl border border-border bg-background p-2"
                     >
                       <p className="font-semibold text-foreground">{getClientName(item.client_id)}</p>
                       <p className="text-muted-foreground">{item.description}</p>
                       <p className="text-muted-foreground">{new Date(item.updated_at).toLocaleDateString("pt-PT")}</p>
+                      {/* Mobile move button */}
+                      <div className="relative mt-1">
+                        <button
+                          type="button"
+                          className="nav-link text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMobileMenuId(mobileMenuId === item.id ? null : item.id);
+                          }}
+                        >
+                          Mover
+                        </button>
+                        {mobileMenuId === item.id ? (
+                          <MoveMenu
+                            opportunity={item}
+                            onMove={(s) => requestMove(item.id, s)}
+                            onClose={() => setMobileMenuId(null)}
+                          />
+                        ) : null}
+                      </div>
                     </li>
                   ))}
               </ul>
@@ -232,11 +371,16 @@ export default function DashboardPage() {
                 <p className="font-semibold text-foreground">{getClientName(opportunity.client_id)}</p>
                 <p className="text-muted-foreground">{opportunity.description}</p>
                 <p className="text-muted-foreground">
-                  Data prevista: {opportunity.installation_date ? new Date(opportunity.installation_date).toLocaleDateString("pt-PT") : "Por definir"}
+                  Data prevista:{" "}
+                  {opportunity.installation_date
+                    ? new Date(opportunity.installation_date).toLocaleDateString("pt-PT")
+                    : "Por definir"}
                 </p>
               </li>
             ))}
-            {upcomingInstallations.length === 0 ? <li className="text-muted-foreground">Sem instalações agendadas.</li> : null}
+            {upcomingInstallations.length === 0 ? (
+              <li className="text-muted-foreground">Sem instalações agendadas.</li>
+            ) : null}
           </ul>
         </article>
       </section>

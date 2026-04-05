@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { addQuote, getClients, getQuotes, updateQuote } from "@/lib/storage";
+import { useToast } from "@/components/ui/toast";
 import type { Client, Quote } from "@/types";
 
 export function QuoteForm() {
   const [saving, setSaving] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const router = useRouter();
+  const { showToast } = useToast();
 
   async function loadData() {
     const [clientsData, quotesData] = await Promise.all([getClients(), getQuotes()]);
@@ -41,9 +45,9 @@ export function QuoteForm() {
       snapshot
     });
 
-    await loadData();
     setSaving(false);
-    alert("Orçamento criado com versão 1.");
+    showToast("Orçamento guardado com sucesso");
+    setTimeout(() => router.push("/dashboard"), 1500);
   }
 
   async function onVersion(formData: FormData) {
@@ -65,9 +69,9 @@ export function QuoteForm() {
       }
     });
 
-    await loadData();
     setSaving(false);
-    alert("Nova versão criada sem perder o histórico.");
+    showToast("Nova versão guardada com sucesso");
+    setTimeout(() => router.push("/dashboard"), 1500);
   }
 
   return (
