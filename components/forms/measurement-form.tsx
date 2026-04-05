@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { addMeasurement, getClients } from "@/lib/storage";
+import { useToast } from "@/components/ui/toast";
 import type { Client } from "@/types";
 
 export function MeasurementForm() {
   const [saving, setSaving] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
+  const { showToast } = useToast();
 
   useEffect(() => {
     void getClients().then(setClients);
@@ -23,11 +28,12 @@ export function MeasurementForm() {
     });
 
     setSaving(false);
-    alert("Medição guardada com sucesso.");
+    showToast("Medição guardada com sucesso");
+    setTimeout(() => router.push("/dashboard"), 1500);
   }
 
   return (
-    <form action={onSubmit} className="card space-y-4">
+    <form ref={formRef} action={onSubmit} className="card space-y-4">
       <h2 className="text-lg font-semibold text-foreground">Nova medição</h2>
       <select name="client_id" required className="input">
         <option value="">Selecionar cliente</option>
@@ -41,7 +47,7 @@ export function MeasurementForm() {
       <input name="dimensions" placeholder="Dimensões (ex.: 2.00m x 1.50m)" required className="input" />
       <textarea name="notes" placeholder="Notas técnicas" className="input min-h-28" />
       <button disabled={saving} className="btn-primary w-full">
-        {saving ? "A guardar..." : "Adicionar medição"}
+        {saving ? "A guardar..." : "Guardar medição"}
       </button>
     </form>
   );
