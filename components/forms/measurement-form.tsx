@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addMeasurement, getClients } from "@/lib/storage";
+import { addActivityLog, addMeasurement, getClients } from "@/lib/storage";
 import { useToast } from "@/components/ui/toast";
 import type { Client } from "@/types";
 
@@ -20,13 +20,14 @@ export function MeasurementForm() {
   async function onSubmit(formData: FormData) {
     setSaving(true);
 
-    await addMeasurement({
+    const result = await addMeasurement({
       client_id: String(formData.get("client_id") || ""),
       room: String(formData.get("room") || ""),
       dimensions: String(formData.get("dimensions") || ""),
       notes: String(formData.get("notes") || "")
     });
 
+    void addActivityLog({ type: "measurement_added", description: `Nova medição: ${result.room}`, entity_id: result.id });
     setSaving(false);
     showToast("Medição guardada com sucesso");
     setTimeout(() => router.push("/dashboard"), 1500);

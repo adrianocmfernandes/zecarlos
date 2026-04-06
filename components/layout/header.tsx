@@ -7,9 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 
 const NAV_ITEMS = [
   { href: appConfig.routes.dashboard, label: "Dashboard" },
+  { href: appConfig.routes.pipeline, label: "Pipeline" },
   { href: appConfig.routes.clients, label: "Clientes" },
-  { href: appConfig.routes.newMeasurement, label: "Nova medição" },
-  { href: appConfig.routes.newQuote, label: "Novo orçamento" }
+  { href: appConfig.routes.agenda, label: "Agenda" }
 ] as const;
 
 export function Header() {
@@ -33,7 +33,11 @@ export function Header() {
         <h1 className="text-xl font-semibold tracking-tight text-foreground">{appConfig.appName}</h1>
         <nav className="flex flex-wrap gap-2 text-sm">
           {NAV_ITEMS.map((item) => (
-            <Link key={item.href} href={item.href} className="nav-link">
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`nav-link ${pathname.startsWith(item.href) ? "bg-primary text-primary-foreground" : ""}`}
+            >
               {item.label}
             </Link>
           ))}

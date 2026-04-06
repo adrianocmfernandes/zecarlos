@@ -95,3 +95,11 @@ export type Task = {
   due_date: string;
   done: boolean;
 };
+
+export type ActivityLog = {
+  id: string;
+  type: string;
+  description: string;
+  entity_id?: string;
+  created_at: string;
+};

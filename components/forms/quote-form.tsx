@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addQuote, getClients, getQuotes, updateQuote } from "@/lib/storage";
+import { addActivityLog, addQuote, getClients, getQuotes, updateQuote } from "@/lib/storage";
 import { useToast } from "@/components/ui/toast";
 import type { Client, Quote } from "@/types";
 
@@ -39,12 +39,13 @@ export function QuoteForm() {
       notes: String(formData.get("notes") || "")
     };
 
-    await addQuote({
+    const newQuote = await addQuote({
       client_id: String(formData.get("client_id") || ""),
       status: String(formData.get("status") || "rascunho") as Quote["status"],
       snapshot
     });
 
+    void addActivityLog({ type: "quote_added", description: `Novo orçamento: ${snapshot.title}`, entity_id: newQuote.id });
     setSaving(false);
     showToast("Orçamento guardado com sucesso");
     setTimeout(() => router.push("/dashboard"), 1500);
