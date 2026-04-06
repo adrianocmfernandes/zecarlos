@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
+  addMeasurement,
+  addQuote,
+  addTask,
   deleteMeasurement,
   deleteQuote,
   getClientById,
@@ -56,14 +59,21 @@ export default function ClienteDetalhePage() {
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [expandedQuoteId, setExpandedQuoteId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  // Edit state for measurements
+  // ── Edit state — measurements ───────────────────────────────────────────
   const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
   const [editMeasurementRoom, setEditMeasurementRoom] = useState("");
   const [editMeasurementDimensions, setEditMeasurementDimensions] = useState("");
   const [editMeasurementNotes, setEditMeasurementNotes] = useState("");
 
-  // Edit state for quotes
+  // ── New measurement form ────────────────────────────────────────────────
+  const [showNewMeasurement, setShowNewMeasurement] = useState(false);
+  const [newRoom, setNewRoom] = useState("");
+  const [newDimensions, setNewDimensions] = useState("");
+  const [newMeasurementNotes, setNewMeasurementNotes] = useState("");
+
+  // ── Edit state — quotes ─────────────────────────────────────────────────
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
   const [editQuoteTitle, setEditQuoteTitle] = useState("");
   const [editQuoteDescription, setEditQuoteDescription] = useState("");
@@ -72,10 +82,24 @@ export default function ClienteDetalhePage() {
   const [editQuoteStatus, setEditQuoteStatus] = useState<QuoteStatus>("rascunho");
   const [editQuoteNotes, setEditQuoteNotes] = useState("");
 
-  // Delete confirmation state
+  // ── New quote form ──────────────────────────────────────────────────────
+  const [showNewQuote, setShowNewQuote] = useState(false);
+  const [newQuoteTitle, setNewQuoteTitle] = useState("");
+  const [newQuoteDescription, setNewQuoteDescription] = useState("");
+  const [newQuoteQuantity, setNewQuoteQuantity] = useState("1");
+  const [newQuoteUnitPrice, setNewQuoteUnitPrice] = useState("0");
+  const [newQuoteStatus, setNewQuoteStatus] = useState<QuoteStatus>("rascunho");
+  const [newQuoteNotes, setNewQuoteNotes] = useState("");
+
+  // ── New task form ───────────────────────────────────────────────────────
+  const [showNewTask, setShowNewTask] = useState(false);
+  const [newTaskLabel, setNewTaskLabel] = useState("");
+  const [newTaskDueDate, setNewTaskDueDate] = useState("");
+
+  // ── Delete confirmation ─────────────────────────────────────────────────
   const [confirmDelete, setConfirmDelete] = useState<{ type: "measurement" | "quote"; id: string } | null>(null);
 
-  const [saving, setSaving] = useState(false);
+  // ── Data loading ────────────────────────────────────────────────────────
 
   async function loadAll() {
     const clientData = await getClientById(params.id);
@@ -99,17 +123,14 @@ export default function ClienteDetalhePage() {
     void loadAll();
   }, [params.id]);
 
-  // ── Measurement edit helpers ─────────────────────────────────────────────
+  // ── Measurement helpers ─────────────────────────────────────────────────
 
   function startEditMeasurement(m: Measurement) {
+    setShowNewMeasurement(false);
     setEditingMeasurementId(m.id);
     setEditMeasurementRoom(m.room);
     setEditMeasurementDimensions(m.dimensions);
     setEditMeasurementNotes(m.notes);
-  }
-
-  function cancelEditMeasurement() {
-    setEditingMeasurementId(null);
   }
 
   async function saveMeasurement(id: string) {
@@ -125,9 +146,28 @@ export default function ClienteDetalhePage() {
     showToast("Medição atualizada com sucesso");
   }
 
-  // ── Quote edit helpers ───────────────────────────────────────────────────
+  async function saveNewMeasurement() {
+    if (!newRoom.trim()) return;
+    setSaving(true);
+    await addMeasurement({
+      client_id: params.id,
+      room: newRoom.trim(),
+      dimensions: newDimensions.trim(),
+      notes: newMeasurementNotes.trim()
+    });
+    setShowNewMeasurement(false);
+    setNewRoom("");
+    setNewDimensions("");
+    setNewMeasurementNotes("");
+    await loadAll();
+    setSaving(false);
+    showToast("Medição adicionada com sucesso");
+  }
+
+  // ── Quote helpers ───────────────────────────────────────────────────────
 
   function startEditQuote(q: Quote) {
+    setShowNewQuote(false);
     const latest = q.versions.at(-1);
     const firstLine = latest?.data.lines[0];
     setEditingQuoteId(q.id);
@@ -139,23 +179,13 @@ export default function ClienteDetalhePage() {
     setEditQuoteNotes(latest?.data.notes ?? "");
   }
 
-  function cancelEditQuote() {
-    setEditingQuoteId(null);
-  }
-
   async function saveQuote(id: string) {
     setSaving(true);
     await updateQuote(id, {
       status: editQuoteStatus,
       snapshot: {
         title: editQuoteTitle,
-        lines: [
-          {
-            description: editQuoteDescription,
-            quantity: Number(editQuoteQuantity),
-            unit_price: Number(editQuoteUnitPrice)
-          }
-        ],
+        lines: [{ description: editQuoteDescription, quantity: Number(editQuoteQuantity), unit_price: Number(editQuoteUnitPrice) }],
         notes: editQuoteNotes
       }
     });
@@ -165,7 +195,49 @@ export default function ClienteDetalhePage() {
     showToast("Orçamento atualizado com sucesso");
   }
 
-  // ── Delete helpers ───────────────────────────────────────────────────────
+  async function saveNewQuote() {
+    if (!newQuoteTitle.trim()) return;
+    setSaving(true);
+    await addQuote({
+      client_id: params.id,
+      status: newQuoteStatus,
+      snapshot: {
+        title: newQuoteTitle.trim(),
+        lines: [{ description: newQuoteDescription.trim(), quantity: Number(newQuoteQuantity), unit_price: Number(newQuoteUnitPrice) }],
+        notes: newQuoteNotes.trim()
+      }
+    });
+    setShowNewQuote(false);
+    setNewQuoteTitle("");
+    setNewQuoteDescription("");
+    setNewQuoteQuantity("1");
+    setNewQuoteUnitPrice("0");
+    setNewQuoteStatus("rascunho");
+    setNewQuoteNotes("");
+    await loadAll();
+    setSaving(false);
+    showToast("Orçamento adicionado com sucesso");
+  }
+
+  // ── Task helpers ────────────────────────────────────────────────────────
+
+  async function saveNewTask() {
+    if (!newTaskLabel.trim() || !newTaskDueDate) return;
+    setSaving(true);
+    await addTask({
+      label: newTaskLabel.trim(),
+      due_date: newTaskDueDate,
+      opportunity_id: opportunity?.id
+    });
+    setShowNewTask(false);
+    setNewTaskLabel("");
+    setNewTaskDueDate("");
+    await loadAll();
+    setSaving(false);
+    showToast("Tarefa adicionada com sucesso");
+  }
+
+  // ── Delete helpers ──────────────────────────────────────────────────────
 
   async function handleConfirmDelete() {
     if (!confirmDelete) return;
@@ -182,7 +254,7 @@ export default function ClienteDetalhePage() {
     setSaving(false);
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────
 
   if (!client) {
     return <p className="text-muted-foreground">Cliente não encontrado.</p>;
@@ -214,12 +286,58 @@ export default function ClienteDetalhePage() {
 
       <article className="card">
         <h2 className="font-semibold text-foreground">Pipeline</h2>
-        <p className="text-muted-foreground">{opportunity ? PIPELINE_STAGE_LABELS[opportunity.stage] : "Sem oportunidade"}</p>
+        <p className="text-muted-foreground">
+          {opportunity ? PIPELINE_STAGE_LABELS[opportunity.stage] : "Sem oportunidade"}
+        </p>
       </article>
 
       {/* ── Medições ── */}
       <article className="card">
-        <h2 className="font-semibold text-foreground">Medições</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-foreground">Medições</h2>
+          <button
+            type="button"
+            className="nav-link text-sm"
+            onClick={() => {
+              setEditingMeasurementId(null);
+              setShowNewMeasurement((v) => !v);
+            }}
+          >
+            {showNewMeasurement ? "Cancelar" : "Adicionar medição"}
+          </button>
+        </div>
+
+        {showNewMeasurement ? (
+          <div className="mt-3 space-y-2 rounded-2xl border border-border bg-background p-3">
+            <input
+              value={newRoom}
+              onChange={(e) => setNewRoom(e.target.value)}
+              placeholder="Divisão (ex.: Sala)"
+              className="input text-sm"
+            />
+            <input
+              value={newDimensions}
+              onChange={(e) => setNewDimensions(e.target.value)}
+              placeholder="Dimensões (ex.: 2.00m x 1.50m)"
+              className="input text-sm"
+            />
+            <textarea
+              value={newMeasurementNotes}
+              onChange={(e) => setNewMeasurementNotes(e.target.value)}
+              placeholder="Notas técnicas"
+              className="input min-h-16 text-sm"
+            />
+            <button
+              type="button"
+              disabled={saving || !newRoom.trim()}
+              className="btn-primary w-full text-sm"
+              onClick={saveNewMeasurement}
+            >
+              {saving ? "A guardar..." : "Guardar medição"}
+            </button>
+          </div>
+        ) : null}
+
         <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
           {measurements.map((measurement) => (
             <li key={measurement.id} className="rounded-2xl bg-card p-3">
@@ -252,7 +370,11 @@ export default function ClienteDetalhePage() {
                     >
                       {saving ? "A guardar..." : "Guardar"}
                     </button>
-                    <button type="button" className="nav-link flex-1 text-center text-sm" onClick={cancelEditMeasurement}>
+                    <button
+                      type="button"
+                      className="nav-link flex-1 text-center text-sm"
+                      onClick={() => setEditingMeasurementId(null)}
+                    >
                       Cancelar
                     </button>
                   </div>
@@ -282,13 +404,87 @@ export default function ClienteDetalhePage() {
               )}
             </li>
           ))}
-          {measurements.length === 0 ? <li>Sem medições registadas.</li> : null}
+          {measurements.length === 0 && !showNewMeasurement ? (
+            <li>Sem medições registadas.</li>
+          ) : null}
         </ul>
       </article>
 
       {/* ── Orçamentos ── */}
       <article className="card">
-        <h2 className="font-semibold text-foreground">Orçamentos</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-foreground">Orçamentos</h2>
+          <button
+            type="button"
+            className="nav-link text-sm"
+            onClick={() => {
+              setEditingQuoteId(null);
+              setShowNewQuote((v) => !v);
+            }}
+          >
+            {showNewQuote ? "Cancelar" : "Adicionar orçamento"}
+          </button>
+        </div>
+
+        {showNewQuote ? (
+          <div className="mt-3 space-y-2 rounded-2xl border border-border bg-background p-3">
+            <input
+              value={newQuoteTitle}
+              onChange={(e) => setNewQuoteTitle(e.target.value)}
+              placeholder="Título (ex.: Blackout sala)"
+              className="input text-sm"
+            />
+            <input
+              value={newQuoteDescription}
+              onChange={(e) => setNewQuoteDescription(e.target.value)}
+              placeholder="Descrição do item"
+              className="input text-sm"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                step="0.01"
+                value={newQuoteQuantity}
+                onChange={(e) => setNewQuoteQuantity(e.target.value)}
+                placeholder="Quantidade"
+                className="input text-sm"
+              />
+              <input
+                type="number"
+                step="0.01"
+                value={newQuoteUnitPrice}
+                onChange={(e) => setNewQuoteUnitPrice(e.target.value)}
+                placeholder="Preço unitário €"
+                className="input text-sm"
+              />
+            </div>
+            <select
+              value={newQuoteStatus}
+              onChange={(e) => setNewQuoteStatus(e.target.value as QuoteStatus)}
+              className="input text-sm"
+            >
+              <option value="rascunho">Rascunho</option>
+              <option value="enviado">Enviado</option>
+              <option value="aceite">Aceite</option>
+              <option value="rejeitado">Rejeitado</option>
+            </select>
+            <textarea
+              value={newQuoteNotes}
+              onChange={(e) => setNewQuoteNotes(e.target.value)}
+              placeholder="Notas"
+              className="input min-h-16 text-sm"
+            />
+            <button
+              type="button"
+              disabled={saving || !newQuoteTitle.trim()}
+              className="btn-primary w-full text-sm"
+              onClick={saveNewQuote}
+            >
+              {saving ? "A guardar..." : "Guardar orçamento"}
+            </button>
+          </div>
+        ) : null}
+
         <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
           {quotes.map((quote) => {
             const latestVersion = quote.versions.at(-1);
@@ -352,7 +548,11 @@ export default function ClienteDetalhePage() {
                       >
                         {saving ? "A guardar..." : "Guardar"}
                       </button>
-                      <button type="button" className="nav-link flex-1 text-center text-sm" onClick={cancelEditQuote}>
+                      <button
+                        type="button"
+                        className="nav-link flex-1 text-center text-sm"
+                        onClick={() => setEditingQuoteId(null)}
+                      >
                         Cancelar
                       </button>
                     </div>
@@ -392,7 +592,8 @@ export default function ClienteDetalhePage() {
                           .reverse()
                           .map((version) => (
                             <li key={version.version}>
-                              v{version.version} — {new Date(version.created_at).toLocaleDateString("pt-PT")}
+                              v{version.version} —{" "}
+                              {new Date(version.created_at).toLocaleDateString("pt-PT")}
                             </li>
                           ))}
                       </ul>
@@ -402,17 +603,64 @@ export default function ClienteDetalhePage() {
               </li>
             );
           })}
-          {quotes.length === 0 ? <li>Sem orçamentos registados.</li> : null}
+          {quotes.length === 0 && !showNewQuote ? (
+            <li>Sem orçamentos registados.</li>
+          ) : null}
         </ul>
       </article>
 
       {/* ── Tarefas ── */}
       <article className="card">
-        <h2 className="font-semibold text-foreground">Tarefas</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-foreground">Tarefas</h2>
+          <button
+            type="button"
+            className="nav-link text-sm"
+            onClick={() => setShowNewTask((v) => !v)}
+          >
+            {showNewTask ? "Cancelar" : "Adicionar tarefa"}
+          </button>
+        </div>
+
+        {showNewTask ? (
+          <div className="mt-3 space-y-2 rounded-2xl border border-border bg-background p-3">
+            <input
+              value={newTaskLabel}
+              onChange={(e) => setNewTaskLabel(e.target.value)}
+              placeholder="Descrição da tarefa"
+              className="input text-sm"
+            />
+            <input
+              type="date"
+              value={newTaskDueDate}
+              onChange={(e) => setNewTaskDueDate(e.target.value)}
+              className="input text-sm"
+            />
+            {!opportunity ? (
+              <p className="text-xs text-muted-foreground">
+                Este cliente não tem oportunidade associada. A tarefa será criada sem oportunidade.
+              </p>
+            ) : null}
+            <button
+              type="button"
+              disabled={saving || !newTaskLabel.trim() || !newTaskDueDate}
+              className="btn-primary w-full text-sm"
+              onClick={saveNewTask}
+            >
+              {saving ? "A guardar..." : "Guardar tarefa"}
+            </button>
+          </div>
+        ) : null}
+
         <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
           {tasks.map((task) => (
             <li key={task.id} className="flex items-center justify-between rounded-2xl bg-card p-3">
-              <span className={task.done ? "line-through" : ""}>{task.label}</span>
+              <div>
+                <span className={task.done ? "line-through" : "text-foreground"}>{task.label}</span>
+                <p className="text-xs text-muted-foreground">
+                  Prazo: {new Date(task.due_date).toLocaleDateString("pt-PT")}
+                </p>
+              </div>
               {!task.done ? (
                 <button
                   type="button"
@@ -427,7 +675,9 @@ export default function ClienteDetalhePage() {
               ) : null}
             </li>
           ))}
-          {tasks.length === 0 ? <li>Sem tarefas para este cliente.</li> : null}
+          {tasks.length === 0 && !showNewTask ? (
+            <li>Sem tarefas para este cliente.</li>
+          ) : null}
         </ul>
       </article>
 
