@@ -1,4 +1,5 @@
 import type {
+  ActivityLog,
   Client,
   Measurement,
   Opportunity,
@@ -276,4 +277,29 @@ export async function addTask(input: Omit<Task, "id" | "done"> & { done?: boolea
 export async function toggleTaskDone(taskId: string, done: boolean) {
   const supabase = createClient();
   await supabase.from("tasks").update({ done }).eq("id", taskId);
+}
+
+/** Silently logs an activity. Requires an `activity_logs` table in Supabase.
+ *  Schema: id uuid pk, type text, description text, entity_id text, created_by uuid, created_at timestamptz
+ *  If the table does not exist the error is swallowed. */
+export async function addActivityLog(input: { type: string; description: string; entity_id?: string }) {
+  const supabase = createClient();
+  const createdBy = await getCurrentUserId();
+  await supabase.from("activity_logs").insert({
+    type: input.type,
+    description: input.description,
+    entity_id: input.entity_id ?? null,
+    created_by: createdBy
+  });
+}
+
+export async function getActivityLogs(limit = 10): Promise<ActivityLog[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("activity_logs")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) return [];
+  return (data ?? []) as ActivityLog[];
 }

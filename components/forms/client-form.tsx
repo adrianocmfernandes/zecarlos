@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { addClient, addOpportunity } from "@/lib/storage";
+import { addActivityLog, addClient, addOpportunity } from "@/lib/storage";
 import { useToast } from "@/components/ui/toast";
 
 export function ClientForm() {
@@ -23,6 +23,7 @@ export function ClientForm() {
       address: String(formData.get("address") || "")
     });
 
+    void addActivityLog({ type: "client_added", description: `Novo cliente: ${client.name}`, entity_id: client.id });
     setSavedClient({ id: client.id });
     setSaving(false);
     setShowOpportunityForm(true);

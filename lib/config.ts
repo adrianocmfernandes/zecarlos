@@ -11,10 +11,12 @@ export const appConfig = {
   routes: {
     login: "/login",
     dashboard: "/dashboard",
+    pipeline: "/pipeline",
     clients: "/clientes",
     newClient: "/clientes/novo",
     newMeasurement: "/medicoes/nova",
-    newQuote: "/orcamentos/novo"
+    newQuote: "/orcamentos/novo",
+    agenda: "/agenda"
   },
   supabase: {
     url: env.supabaseUrl || "",
